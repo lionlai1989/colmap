@@ -233,49 +233,82 @@ differences, which this section highlights.
     ```bash
     COLMAP_DATASET_PATH=datasets/insta360
 
+    colmap feature_extractor \
+        --database_path $COLMAP_DATASET_PATH/database.db \
+        --image_path $COLMAP_DATASET_PATH/images/ \
+        --ImageReader.single_camera 1 \
+        --ImageReader.camera_model PINHOLE \
+        --ImageReader.camera_params "360,360,360,360"
     ```
+
+    Since perspective images are cropped from a panorama using a perfect pinhole
+    model, we can treat all images as captured by a single pinhole camera. See
+    COLMAP's [camera models]((https://colmap.github.io/cameras.html)) for
+    details.
 
 2. Feature Matching
 
     ```bash
-
+    colmap exhaustive_matcher \
+        --database_path $COLMAP_DATASET_PATH/database.db \
+        --SiftMatching.guided_matching 1
     ```
+
+    Guided matching uses geometric verification to refine feature matches.
 
 3. Mapper
 
+    ```bash
+    mkdir -p $COLMAP_DATASET_PATH/sparse/
+    colmap mapper \
+        --database_path $COLMAP_DATASET_PATH/database.db \
+        --image_path $COLMAP_DATASET_PATH/images/ \
+        --output_path $COLMAP_DATASET_PATH/sparse/ \
+        --Mapper.ba_refine_focal_length 0 \
+        --Mapper.ba_refine_principal_point 0 \
+        --Mapper.ba_refine_extra_params 0 \
+    ```
 
-## How to develop?
+    Here, bundle adjustment (BA) does not refine camera intrinsics to maintain
+    consistency with the predefined pinhole model.
 
-1. 
-```bash
-export path and ld-library-path
+## Developing COLMAP in VSCode
 
-cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-  -DOPENGL_opengl_LIBRARY=/usr/lib/x86_64-linux-gnu/libGL.so.1 \
-  -DOPENGL_glx_LIBRARY=/usr/lib/x86_64-linux-gnu/libGLX.so.0 \
-  -DCMAKE_CUDA_ARCHITECTURES=89 .
-```
+1. Build COLMAP
+    Run the following command to build COLMAP with compile commands enabled:
 
-2. Use vscode to open `colmap/` folder.
-add this line "compileCommands": "${workspaceFolder}/compile_commands.json" in `.vscode/c_cpp_properties.json`
+    ```bash
+    cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+        -DOPENGL_opengl_LIBRARY=/usr/lib/x86_64-linux-gnu/libGL.so.1 \
+        -DOPENGL_glx_LIBRARY=/usr/lib/x86_64-linux-gnu/libGLX.so.0 \
+        -DCMAKE_CUDA_ARCHITECTURES=89 .
+    ```
 
-```text
-$ cat .vscode/c_cpp_properties.json
-{
-    "configurations": [
-        {
-            "name": "Linux",
-            "compileCommands": "${workspaceFolder}/compile_commands.json",
-            "includePath": [
-                "${workspaceFolder}/**"
-            ],
-            "defines": [],
-            "compilerPath": "/usr/bin/gcc",
-            "cStandard": "c17",
-            "cppStandard": "gnu++17",
-            "intelliSenseMode": "linux-gcc-x64"
-        }
-    ],
-    "version": 4
-}
-```
+2. Configure VSCode
+    - Open the `colmap/` folder in VSCode.
+    - Add the following line to `.vscode/c_cpp_properties.json`:
+    ```
+    compileCommands": "${workspaceFolder}/compile_commands.json
+    ```
+
+    The complete ".vscode/c_cpp_properties.json" is shown below:
+    ```text
+    $ cat .vscode/c_cpp_properties.json
+    {
+        "configurations": [
+            {
+                "name": "Linux",
+                "compileCommands": "${workspaceFolder}/compile_commands.json",
+                "includePath": [
+                    "${workspaceFolder}/**"
+                ],
+                "defines": [],
+                "compilerPath": "/usr/bin/gcc",
+                "cStandard": "c17",
+                "cppStandard": "gnu++17",
+                "intelliSenseMode": "linux-gcc-x64"
+            }
+        ],
+        "version": 4
+    }
+    ```
